@@ -1,93 +1,55 @@
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-
 dotenv.config();
+
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-const API_KEY = process.env.GROQ_API_KEY;
-const MODEL = process.env.MODEL_NAME || "llama-3.3-70b-versatile";
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// AI Future Prediction
+async function askGroq(prompt) {
+    const res = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${GROQ_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: "mixtral-8x7b-32768",
+            messages: [{ role: "user", content: prompt }]
+        })
+    });
+    const data = await res.json();
+    return data.choices[0].message.content;
+}
+
 app.post("/api/future-prediction", async (req, res) => {
-  const { name, month, place } = req.body;
-  if (!name || !month || !place) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  const prompt = `You are a futuristic AI oracle from the year 3050.
-  Given:
-  Name: ${name}
-  Birth Month: ${month}
-  Favourite Place: ${place}
-  Create a humorous yet mystical sci-fi prediction about their future.
-  Keep it under 80 words and make it inspiring.`;
-
-  try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
-      })
-    });
-
-    const data = await groqRes.json();
-    const prediction = data?.choices?.[0]?.message?.content || "Your future is cloaked in quantum mist. 🌫️";
-
-    res.json({ prediction });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Prediction failed" });
-  }
+    const { name, month, place } = req.body;
+    const prompt = `Make a funny future prediction in 2-3 sentences for a person named ${name}, born in ${month}, who loves ${place}.`;
+    res.json({ prediction: await askGroq(prompt) });
 });
 
-// Guess the AI's Lie Game
-app.get("/api/lies-game", async (req, res) => {
-  const prompt = `Create a "Three Truths and a Lie" game.
-  Give 4 numbered statements (1, 2, 3, 4).
-  Randomly make one false and mark which number is false in your answer.
-  Respond in JSON format:
-  {
-    "statements": ["...", "...", "...", "..."],
-    "answer": "number"
-  }`;
-
-  try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
-      })
-    });
-
-    const data = await groqRes.json();
-    let parsed;
-    try {
-      parsed = JSON.parse(data?.choices?.[0]?.message?.content);
-    } catch (err) {
-      return res.status(500).json({ error: "AI response parse error" });
-    }
-
-    res.json(parsed);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lies game failed" });
-  }
+app.post("/api/ai-lie", async (req, res) => {
+    const { topic } = req.body;
+    const prompt = `Give me exactly 4 short statements about ${topic}, where 3 are true and 1 is a lie. Do not say which one is the lie.`;
+    const text = await askGroq(prompt);
+    res.json({ statements: text.split("\n").filter(l => l.trim()) });
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.post("/api/start-character", async (req, res) => {
+    const { topic } = req.body;
+    const prompt = `Pick one famous character or person related to ${topic}. Only respond with the name.`;
+    const character = (await askGroq(prompt)).trim();
+    res.json({ character });
+});
+
+app.post("/api/ask-character", async (req, res) => {
+    const { character, question } = req.body;
+    const prompt = `You are roleplaying as ${character}. Answer the following question as if you are them, without revealing your name: ${question}`;
+    res.json({ answer: await askGroq(prompt) });
+});
+
+app.listen(process.env.PORT || 8080, () => console.log("Server running"));
