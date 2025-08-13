@@ -1,89 +1,51 @@
-const fortuneBtn = document.getElementById("fortune-btn");
-const liesBtn = document.getElementById("lies-btn");
-const inputSection = document.getElementById("input-section");
-const outputSection = document.getElementById("output-section");
-const gameTitle = document.getElementById("game-title");
-const userInput = document.getElementById("user-input");
-const playBtn = document.getElementById("play-btn");
-const resetBtn = document.getElementById("reset-btn");
-const outputDiv = document.getElementById("output");
+import express from "express";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
 
-let currentGame = null;
-let correctIndex = null;
+dotenv.config();
+const app = express();
+app.use(express.json());
+app.use(express.static("public"));
 
-function resetGame() {
-  inputSection.classList.add("hidden");
-  outputSection.classList.add("hidden");
-  document.getElementById("game-selection").classList.remove("hidden");
-  userInput.value = "";
-  outputDiv.innerHTML = "";
-}
+const API_KEY = process.env.GROQ_API_KEY;
+const MODEL = process.env.MODEL_NAME || "llama-3.3-70b-versatile";
 
-fortuneBtn.addEventListener("click", () => {
-  currentGame = "fortune";
-  gameTitle.textContent = "🥠 AI Fortune Cookie";
-  document.getElementById("game-selection").classList.add("hidden");
-  inputSection.classList.remove("hidden");
-  userInput.placeholder = "Enter your name or a fun fact...";
-});
+app.post("/api/future-prediction", async (req, res) => {
+  const { name, month, place } = req.body;
+  if (!name || !month || !place) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
-liesBtn.addEventListener("click", () => {
-  currentGame = "lies";
-  gameTitle.textContent = "🕵️ Guess the AI’s Lie";
-  document.getElementById("game-selection").classList.add("hidden");
-  inputSection.classList.remove("hidden");
-  userInput.placeholder = "Enter a topic (e.g., cats, space, pizza)...";
-});
+  const prompt = `You are an AI oracle from the year 3050. 
+    Using advanced cosmic algorithms, predict a humorous but inspiring future for:
+    Name: ${name}
+    Birth Month: ${month}
+    Favourite Place: ${place}
+    Make it feel like a mystical sci-fi prophecy.`;
 
-playBtn.addEventListener("click", async () => {
-  const text = userInput.value.trim();
-  if (!text) return alert("Please enter something!");
-
-  outputDiv.textContent = "Initializing neural flux drive...";
-  outputSection.classList.remove("hidden");
-  inputSection.classList.add("hidden");
-
-  if (currentGame === "fortune") {
-    const res = await fetch("/api/fortune", {
+  try {
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: text })
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
     });
-    const data = await res.json();
-    outputDiv.textContent = data.ok ? data.fortune : "Error generating fortune.";
-  } else if (currentGame === "lies") {
-    const res = await fetch("/api/lies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic: text })
-    });
-    const data = await res.json();
-    if (!data.ok) {
-      outputDiv.textContent = "Error generating quiz.";
-      return;
-    }
-    correctIndex = data.answer_index;
-    const factsList = data.facts
-      .map((fact, i) => `<li data-index="${i}">${fact}</li>`)
-      .join("");
-    outputDiv.innerHTML = `<p>One of these is a lie — can you guess?</p><ul id="facts-list">${factsList}</ul>`;
-    document.querySelectorAll("#facts-list li").forEach(li => {
-      li.style.cursor = "pointer";
-      li.addEventListener("click", () => {
-        const idx = parseInt(li.dataset.index);
-        li.style.textShadow = "0 0 10px #ff00ff";
-        if (idx === correctIndex) {
-          li.style.color = "#ff004c";
-          alert(`🎉 Correct! ${data.reveal_text}`);
-        } else {
-          li.style.color = "#00ffcc";
-          alert(`❌ Nope! The lie was: "${data.facts[correctIndex]}".`);
-        }
-      });
-    });
+
+    const data = await groqRes.json();
+    const prediction = data?.choices?.[0]?.message?.content || "Your future is... unknown due to quantum fog. 🌫️";
+
+    res.json({ prediction });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Prediction failed" });
   }
 });
 
-resetBtn.addEventListener("click", resetGame);
-
-resetGame();
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
