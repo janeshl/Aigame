@@ -7,55 +7,45 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const API_KEY = process.env.GROQ_API_KEY;
 const MODEL = process.env.MODEL_NAME || "llama-3.3-70b-versatile";
 
-async function queryGroq(prompt) {
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${GROQ_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.8
-    })
-  });
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
-}
-
-app.post("/api/future", async (req, res) => {
+app.post("/api/future-prediction", async (req, res) => {
   const { name, month, place } = req.body;
-  try {
-    const prompt = `Using the name "${name}", birth month "${month}", and favourite place "${place}", write a 2-3 short, fun, and mystical prediction about this person's future in a cyberpunk style.`;
-    const prediction = await queryGroq(prompt);
-    res.json({ ok: true, prediction });
-  } catch (e) {
-    res.json({ ok: false });
+  if (!name || !month || !place) {
+    return res.status(400).json({ error: "Missing fields" });
   }
-});
 
-app.post("/api/lies", async (req, res) => {
-  const { topic } = req.body;
+  const prompt = `You are an AI oracle from the year 3050. 
+    Using advanced cosmic algorithms, predict a humorous but inspiring future for:
+    Name: ${name}
+    Birth Month: ${month}
+    Favourite Place: ${place}
+    Make it feel like a mystical sci-fi prophecy.`;
+
   try {
-    const prompt = `Give 4 statements about ${topic}, where 3 are true and 1 is false. Mark the false one clearly and funny.`;
-    const answer = await queryGroq(prompt);
-    const lines = answer.split("\n").filter(l => l.trim());
-    const facts = lines.map(l => l.replace(/^\d+\.\s*/, ""));
-    const answer_index = facts.findIndex(f => /false|lie/i.test(f));
-    res.json({
-      ok: true,
-      facts,
-      answer_index,
-      reveal_text: "That was the AI's trick!"
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
     });
-  } catch (e) {
-    res.json({ ok: false });
+
+    const data = await groqRes.json();
+    const prediction = data?.choices?.[0]?.message?.content || "Your future is... unknown due to quantum fog. 🌫️";
+
+    res.json({ prediction });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Prediction failed" });
   }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
