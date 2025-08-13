@@ -3,36 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Stall Games — Dark Sci-Fi</title>
+  <title>AI Stall Games — Futuristic Edition</title>
   <link rel="stylesheet" href="styles.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header>
-    <h1>🚀 AI Stall Games 🚀</h1>
-    <p>Powered by Team Boots</p>
+
+  <!-- Grid Overlay -->
+  <div class="grid-overlay"></div>
+
+  <!-- Header Section -->
+  <header class="fade-in">
+    <h1>⚡ Welcome to <span>AI Nexus</span></h1>
+    <p class="subline">Experience the future of intelligence — predictions, mysteries, and challenges powered by AI.</p>
+    <div class="hero-image">
+      <img src="https://i.postimg.cc/tCFg8GLt/futuristic-head.png" alt="AI Head" />
+    </div>
   </header>
 
-  <main>
-    <section id="game-selection">
-      <button id="fortune-btn">🥠 AI Fortune Cookie</button>
-      <button id="lies-btn">🕵️ Guess the AI’s Lie</button>
+  <!-- Game Selection -->
+  <main class="fade-in">
+    <section id="game-selection" class="panel">
+      <h2>Choose Your Game</h2>
+      <button id="future-btn" class="neon-btn">🔮 AI Future Prediction</button>
+      <button id="lies-btn" class="neon-btn alt">🕵️ Guess the AI’s Lie</button>
     </section>
 
-    <section id="input-section" class="hidden">
-      <h2 id="game-title"></h2>
-      <input type="text" id="user-input" placeholder="Type here..."/>
-      <button id="play-btn">Play!</button>
+    <!-- Future Prediction Input -->
+    <section id="future-input-section" class="hidden panel slide-up">
+      <h2>🔮 Enter Your Details</h2>
+      <input type="text" id="name-input" placeholder="Your Name"/>
+      <input type="text" id="month-input" placeholder="Birth Month"/>
+      <input type="text" id="place-input" placeholder="Favourite Place"/>
+      <button id="future-play-btn" class="neon-btn">Predict My Future</button>
     </section>
 
-    <section id="output-section" class="hidden">
-      <div id="output"></div>
-      <button id="reset-btn">Play Again</button>
+    <!-- Output Section -->
+    <section id="output-section" class="hidden panel slide-up">
+      <div id="output" class="output-box"></div>
+      <button id="reset-btn" class="neon-btn alt">Play Again</button>
     </section>
   </main>
 
-  <footer>
-    <p>Made for fun at our stall — no personal data stored.</p>
+  <footer class="fade-in">
+    <p>🚀 Powered by Boots — Styled for the Future</p>
   </footer>
 
   <script src="script.js"></script>
