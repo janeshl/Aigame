@@ -39,7 +39,7 @@ playBtn.addEventListener("click", async () => {
   const text = userInput.value.trim();
   if (!text) return alert("Please enter something!");
 
-  outputDiv.textContent = "Thinking...";
+  outputDiv.textContent = "Initializing neural flux drive...";
   outputSection.classList.remove("hidden");
   inputSection.classList.add("hidden");
 
@@ -71,11 +71,12 @@ playBtn.addEventListener("click", async () => {
       li.style.cursor = "pointer";
       li.addEventListener("click", () => {
         const idx = parseInt(li.dataset.index);
+        li.style.textShadow = "0 0 10px #ff00ff";
         if (idx === correctIndex) {
-          li.style.color = "red";
+          li.style.color = "#ff004c";
           alert(`🎉 Correct! ${data.reveal_text}`);
         } else {
-          li.style.color = "green";
+          li.style.color = "#00ffcc";
           alert(`❌ Nope! The lie was: "${data.facts[correctIndex]}".`);
         }
       });
