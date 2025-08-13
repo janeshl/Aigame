@@ -1,51 +1,75 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
+document.addEventListener("DOMContentLoaded", () => {
+  const gameSelection = document.getElementById("game-selection");
+  const futureInputSection = document.getElementById("future-input-section");
+  const outputSection = document.getElementById("output-section");
 
-dotenv.config();
-const app = express();
-app.use(express.json());
-app.use(express.static("public"));
+  const futureBtn = document.getElementById("future-btn");
+  const liesBtn = document.getElementById("lies-btn");
+  const playBtn = document.getElementById("future-play-btn");
+  const resetBtn = document.getElementById("reset-btn");
 
-const API_KEY = process.env.GROQ_API_KEY;
-const MODEL = process.env.MODEL_NAME || "llama-3.3-70b-versatile";
+  const nameInput = document.getElementById("name-input");
+  const monthInput = document.getElementById("month-input");
+  const placeInput = document.getElementById("place-input");
+  const outputBox = document.getElementById("output");
 
-app.post("/api/future-prediction", async (req, res) => {
-  const { name, month, place } = req.body;
-  if (!name || !month || !place) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  const prompt = `You are an AI oracle from the year 3050. 
-    Using advanced cosmic algorithms, predict a humorous but inspiring future for:
-    Name: ${name}
-    Birth Month: ${month}
-    Favourite Place: ${place}
-    Make it feel like a mystical sci-fi prophecy.`;
-
-  try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
-      })
+  // Utility for switching panels
+  function showPanel(panelToShow) {
+    [gameSelection, futureInputSection, outputSection].forEach(panel => {
+      panel.classList.add("hidden");
     });
-
-    const data = await groqRes.json();
-    const prediction = data?.choices?.[0]?.message?.content || "Your future is... unknown due to quantum fog. 🌫️";
-
-    res.json({ prediction });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Prediction failed" });
+    panelToShow.classList.remove("hidden");
+    panelToShow.classList.add("slide-up");
   }
-});
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  // Click: Select Future Prediction Game
+  futureBtn.addEventListener("click", () => {
+    showPanel(futureInputSection);
+  });
+
+  // Click: Select Guess the AI's Lie (placeholder for now)
+  liesBtn.addEventListener("click", () => {
+    outputBox.innerHTML = `<p style="color:magenta">The 'Guess the AI’s Lie' game is coming soon in this new futuristic theme 🚀</p>`;
+    showPanel(outputSection);
+  });
+
+  // Click: Play Future Prediction
+  playBtn.addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    const month = monthInput.value.trim();
+    const place = placeInput.value.trim();
+
+    if (!name || !month || !place) {
+      outputBox.innerHTML = `<p style="color:red">Please fill in all fields before we predict your future.</p>`;
+      showPanel(outputSection);
+      return;
+    }
+
+    outputBox.innerHTML = `<p style="color:cyan">Scanning the cosmic data streams... 🌌</p>`;
+    showPanel(outputSection);
+
+    try {
+      const res = await fetch("/api/future-prediction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, month, place })
+      });
+
+      if (!res.ok) throw new Error("Prediction request failed");
+
+      const data = await res.json();
+      outputBox.innerHTML = `<p style="color:lime">${data.prediction}</p>`;
+    } catch (err) {
+      console.error(err);
+      outputBox.innerHTML = `<p style="color:red">Error fetching prediction. Try again.</p>`;
+    }
+  });
+
+  // Reset to game selection
+  resetBtn.addEventListener("click", () => {
+    nameInput.value = "";
+    monthInput.value = "";
+    placeInput.value = "";
+    showPanel(gameSelection);
+  });
+});
