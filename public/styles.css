@@ -1,0 +1,78 @@
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom right, #fdf0d5, #fceabb);
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+}
+
+header h1 {
+  margin-bottom: 0;
+  font-size: 2.5rem;
+  color: #c0392b;
+}
+
+header p {
+  margin-top: 0.2rem;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}
+
+#game-selection button {
+  margin: 10px;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  background-color: #f39c12;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#game-selection button:hover {
+  background-color: #e67e22;
+}
+
+#input-section, #output-section {
+  margin-top: 20px;
+}
+
+#user-input {
+  width: 80%;
+  max-width: 400px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+#play-btn, #reset-btn {
+  margin-top: 15px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #27ae60;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#play-btn:hover, #reset-btn:hover {
+  background-color: #2ecc71;
+}
+
+#output {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 500px;
+  margin: 0 auto;
+  font-size: 1.2rem;
+  box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
+}
+
+.hidden {
+  display: none;
+}
