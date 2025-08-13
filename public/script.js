@@ -1,109 +1,86 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const gameSelection = document.getElementById("game-selection");
-  const futureInputSection = document.getElementById("future-input-section");
-  const lieInputSection = document.getElementById("lie-input-section");
-  const outputSection = document.getElementById("output-section");
+let currentCharacter = "";
+let charChances = 0;
 
-  const futureBtn = document.getElementById("future-btn");
-  const liesBtn = document.getElementById("lies-btn");
+function playSound(id) {
+    document.getElementById(id).play();
+}
 
-  const futurePlayBtn = document.getElementById("future-play-btn");
-  const liePlayBtn = document.getElementById("lie-play-btn");
+function showScreen(screenId) {
+    playSound("transition-sound");
+    document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+    document.getElementById(screenId).classList.remove("hidden");
+    gsap.from(`#${screenId}`, { duration: 0.5, opacity: 0, y: 50 });
+}
 
-  const guessInput = document.getElementById("guess-input");
-  const guessSubmitBtn = document.getElementById("guess-submit-btn");
-
-  const resetBtn = document.getElementById("reset-btn");
-  const outputBox = document.getElementById("output");
-
-  const nameInput = document.getElementById("name-input");
-  const monthInput = document.getElementById("month-input");
-  const placeInput = document.getElementById("place-input");
-
-  let currentLieAnswer = null;
-
-  function showPanel(panelToShow) {
-    [gameSelection, futureInputSection, lieInputSection, outputSection].forEach(panel => {
-      panel.classList.add("hidden");
-    });
-    panelToShow.classList.remove("hidden");
-    panelToShow.classList.add("slide-up");
-  }
-
-  // Future Prediction Game
-  futureBtn.addEventListener("click", () => {
-    showPanel(futureInputSection);
-  });
-
-  futurePlayBtn.addEventListener("click", async () => {
-    const name = nameInput.value.trim();
-    const month = monthInput.value.trim();
-    const place = placeInput.value.trim();
-
-    if (!name || !month || !place) {
-      outputBox.innerHTML = `<p style="color:red">Please fill in all fields before we predict your future.</p>`;
-      showPanel(outputSection);
-      return;
-    }
-
-    outputBox.innerHTML = `<p style="color:cyan">Scanning the cosmic data streams... 🌌</p>`;
-    showPanel(outputSection);
-
-    try {
-      const res = await fetch("/api/future-prediction", {
+async function playFuturePrediction() {
+    playSound("click-sound");
+    const name = document.getElementById("fp-name").value;
+    const month = document.getElementById("fp-month").value;
+    const place = document.getElementById("fp-place").value;
+    const res = await fetch("/api/future-prediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, month, place })
-      });
+    });
+    const data = await res.json();
+    document.getElementById("fp-result").innerText = data.prediction;
+}
 
-      const data = await res.json();
-      outputBox.innerHTML = `<p style="color:lime">${data.prediction}</p>`;
-    } catch (err) {
-      outputBox.innerHTML = `<p style="color:red">Error fetching prediction. Try again.</p>`;
+async function playAiLie() {
+    playSound("click-sound");
+    const topic = document.getElementById("lie-topic").value;
+    const res = await fetch("/api/ai-lie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic })
+    });
+    const data = await res.json();
+    const container = document.getElementById("lie-statements");
+    container.innerHTML = "";
+    data.statements.forEach(s => {
+        const p = document.createElement("p");
+        p.innerText = s;
+        container.appendChild(p);
+    });
+}
+
+async function startCharacterGame() {
+    playSound("click-sound");
+    const topic = document.getElementById("char-topic").value;
+    const res = await fetch("/api/start-character", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic })
+    });
+    const data = await res.json();
+    currentCharacter = data.character;
+    charChances = 10;
+    document.getElementById("char-game").classList.remove("hidden");
+    document.getElementById("char-response").innerText = "";
+    document.getElementById("char-chances").innerText = `Chances left: ${charChances}`;
+}
+
+async function askCharacter() {
+    const question = document.getElementById("char-input").value;
+    charChances--;
+    const res = await fetch("/api/ask-character", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ character: currentCharacter, question })
+    });
+    const data = await res.json();
+    document.getElementById("char-response").innerText = data.answer;
+    document.getElementById("char-chances").innerText = `Chances left: ${charChances}`;
+    if (charChances <= 0) {
+        document.getElementById("char-response").innerText += `\nGame Over! The character was: ${currentCharacter}`;
     }
-  });
+}
 
-  // Lie Game
-  liesBtn.addEventListener("click", () => {
-    showPanel(lieInputSection);
-  });
-
-  liePlayBtn.addEventListener("click", async () => {
-    outputBox.innerHTML = `<p style="color:cyan">Generating your challenge...</p>`;
-    showPanel(outputSection);
-
-    try {
-      const res = await fetch("/api/lies-game", { method: "GET" });
-      const data = await res.json();
-      currentLieAnswer = data.answer;
-      outputBox.innerHTML = `<p style="color:yellow">${data.statements.join("<br>")}</p>
-                             <p style="color:cyan">Which one is the lie? (Enter 1, 2, or 3 below)</p>`;
-      guessInput.classList.remove("hidden");
-      guessSubmitBtn.classList.remove("hidden");
-    } catch (err) {
-      outputBox.innerHTML = `<p style="color:red">Error fetching challenge.</p>`;
-    }
-  });
-
-  guessSubmitBtn.addEventListener("click", () => {
-    const guess = guessInput.value.trim();
-    if (guess === currentLieAnswer) {
-      outputBox.innerHTML += `<p style="color:lime">✅ Correct! You spotted the lie.</p>`;
+function guessCharacter() {
+    const guess = prompt("Enter your guess:");
+    if (guess && guess.toLowerCase() === currentCharacter.toLowerCase()) {
+        document.getElementById("char-response").innerText = `🎉 Correct! It was ${currentCharacter}!`;
     } else {
-      outputBox.innerHTML += `<p style="color:red">❌ Nope! The lie was #${currentLieAnswer}.</p>`;
+        document.getElementById("char-response").innerText += `\nWrong guess! Try again.`;
     }
-    guessInput.classList.add("hidden");
-    guessSubmitBtn.classList.add("hidden");
-  });
-
-  // Reset
-  resetBtn.addEventListener("click", () => {
-    nameInput.value = "";
-    monthInput.value = "";
-    placeInput.value = "";
-    guessInput.value = "";
-    guessInput.classList.add("hidden");
-    guessSubmitBtn.classList.add("hidden");
-    showPanel(gameSelection);
-  });
-});
+}
