@@ -56,7 +56,7 @@ app.get("/api/lies-game", async (req, res) => {
   Randomly make one false and mark which number is false in your answer.
   Respond in JSON format:
   {
-    "statements": ["...", "...", "..."],
+    "statements": ["...", "...", "...", "..."],
     "answer": "number"
   }`;
 
